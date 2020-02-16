@@ -1,0 +1,44 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+trigger:
+- master
+
+pool:
+  vmImage: 'vs2017-win2016'
+
+variables:
+  NUGET_PACKAGES: $(Pipeline.Workspace)/.nuget/packages
+  PerlPath: $(NUGET_PACKAGES)/StrawberryPerl64.5.22.2.1/Tools/perl/bin
+  NasmPath: $(NUGET_PACKAGES)/NASM.M365Rca.2.14.2/tools/win64
+
+steps:
+
+- task: NuGetCommand@2
+  inputs:
+    command: 'restore'
+    restoreSolution: '$(Build.Repository.LocalPath)/packages.config'
+    feedsToUse: 'select'
+    vstsFeed: '044f0876-fec6-4110-afa8-53f688ecadaa/4929a7ea-925a-4917-bebf-4ca21bc54ff8'
+    includeNuGetOrg: false
+    restoreDirectory: $(NUGET_PACKAGES)
+    verbosityRestore: Detailed
+
+- task: CmdLine@2
+  displayName: 'Run Configure and Build'
+  inputs:
+    script: |
+      echo Running vcvarsall.bat...
+      pushd "C:\Program Files (x86)\Microsoft Visual Studio\Installer\"
+        for /f "delims=" %%x in ('.\vswhere.exe -latest -property InstallationPath') do set VSPATH=%%x
+      popd
+      call "%VSPATH%\VC\Auxiliary\Build\vcvarsall.bat" x64
+      echo Configuring Paths...
+      set PATH=$(PerlPath);%PATH%
+      set PATH=$(NasmPath);%PATH%
+      echo Running Perl Configure...
+      perl Configure VC-WIN64A
+      echo Running nmake...
+      nmake
