@@ -4,7 +4,7 @@
 # https://aka.ms/yaml
 
 trigger:
-- master
+- OpenSSL_1_1_1-stable
 
 pool:
   vmImage: 'vs2017-win2016'
